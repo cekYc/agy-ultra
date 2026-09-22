@@ -3,7 +3,6 @@
 # 🚀 AgyUltra
 
 ### High-Effort Multi-Agent Swarm Mode for Google Antigravity
-**Powered by Gemini 3.8 Flash (High Reasoning)**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Google Antigravity](https://img.shields.io/badge/Platform-Google_Antigravity-blue.svg)](https://antigravity.google)
