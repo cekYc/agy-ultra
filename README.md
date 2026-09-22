@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🚀 GeminiUltra
+# 🚀 AgyUltra
 
 ### High-Effort Multi-Agent Swarm Mode for Google Antigravity
 **Powered by Gemini 3.8 Flash (High Reasoning)**
