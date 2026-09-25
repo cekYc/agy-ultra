@@ -1,81 +1,72 @@
 <#
 .SYNOPSIS
-    GeminiUltra 1-Click Installer for Windows (Google Antigravity)
+    Installs the /ultra skill and its three subagents for Google Antigravity.
 .DESCRIPTION
-    Installs or updates the GeminiUltra multi-agent swarm skill globally into:
-    $HOME\.gemini\config\skills\gemini-ultra
+    Global (default): ~\.gemini\config\skills\ultra + ~\.gemini\config\agents\ultra-*
+    -Project DIR:     DIR\.agents\skills\ultra      + DIR\.agents\agents\ultra-*
+    Run it from a clone of this repo. When piped (irm ... | iex) it downloads the repo first.
+.EXAMPLE
+    .\install.ps1
+.EXAMPLE
+    .\install.ps1 -Project C:\code\my-app
 #>
+param([string]$Project)
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
+$ArchiveUrl = 'https://github.com/cekYc/GeminiUltra/archive/refs/heads/main.zip'
+$Agents = 'ultra-worker', 'ultra-critic', 'ultra-verifier'
 
-$RepoUrl = "https://github.com/cekYc/GeminiUltra.git"
-$GlobalSkillsDir = Join-Path $HOME ".gemini\config\skills"
-$TargetDir = Join-Path $GlobalSkillsDir "gemini-ultra"
-
-Write-Host ""
-Write-Host "===========================================================" -ForegroundColor Cyan
-Write-Host "   [*] Installing GeminiUltra for Google Antigravity       " -ForegroundColor Cyan
-Write-Host "   Powered by Gemini 3.8 Flash (High Reasoning)            " -ForegroundColor DarkCyan
-Write-Host "===========================================================" -ForegroundColor Cyan
-Write-Host ""
-
-# Ensure global skills folder exists
-if (-not (Test-Path $GlobalSkillsDir)) {
-    Write-Host "[1/3] Creating global skills directory..." -ForegroundColor Yellow
-    New-Item -ItemType Directory -Force -Path $GlobalSkillsDir | Out-Null
+if ($Project) {
+    if (-not (Test-Path -LiteralPath $Project -PathType Container)) { throw "Not a directory: $Project" }
+    $Dest = Join-Path (Resolve-Path -LiteralPath $Project).ProviderPath '.agents'
 } else {
-    Write-Host "[1/3] Verified global skills directory: $GlobalSkillsDir" -ForegroundColor Green
+    $Dest = Join-Path $HOME '.gemini\config'
 }
 
-# Determine if running locally from cloned repo or via remote web script
-$CurrentScriptDir = $PSScriptRoot
-$LocalSourceDir = Join-Path $CurrentScriptDir ".agents\skills\gemini-ultra"
-
-if ($CurrentScriptDir -and (Test-Path $LocalSourceDir)) {
-    Write-Host "[2/3] Installing from local repository..." -ForegroundColor Yellow
-    if (Test-Path $TargetDir) {
-        Remove-Item -Recurse -Force $TargetDir
-    }
-    Copy-Item -Recurse -Force $LocalSourceDir $TargetDir
-} else {
-    Write-Host "[2/3] Downloading latest GeminiUltra release from GitHub..." -ForegroundColor Yellow
-    $TempDir = Join-Path $env:TEMP "GeminiUltra-Install-$(Get-Random)"
-    try {
-        if (Get-Command git -ErrorAction SilentlyContinue) {
-            git clone --depth 1 $RepoUrl $TempDir --quiet
-        } else {
-            # Fallback if git is not in PATH: Download zip
-            $ZipPath = Join-Path $env:TEMP "gemini-ultra.zip"
-            Invoke-WebRequest -Uri "https://github.com/cekYc/GeminiUltra/archive/refs/heads/main.zip" -OutFile $ZipPath
-            Expand-Archive -Path $ZipPath -DestinationPath $TempDir -Force
-            Remove-Item $ZipPath -Force
-            $TempDir = Join-Path $TempDir "GeminiUltra-main"
-        }
-
-        $DownloadedSource = Join-Path $TempDir ".agents\skills\gemini-ultra"
-        if (Test-Path $TargetDir) {
-            Remove-Item -Recurse -Force $TargetDir
-        }
-        Copy-Item -Recurse -Force $DownloadedSource $TargetDir
-    } finally {
-        if (Test-Path $TempDir) {
-            Remove-Item -Recurse -Force $TempDir -ErrorAction SilentlyContinue
+$Src = $null
+if ($PSScriptRoot) { $Src = Join-Path $PSScriptRoot '.agents' }
+$Tmp = $null
+try {
+    if (-not $Src -or -not (Test-Path -LiteralPath (Join-Path $Src 'skills\ultra\SKILL.md'))) {
+        $Tmp = Join-Path ([IO.Path]::GetTempPath()) ('ultra-install-' + [Guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $Tmp | Out-Null
+        $Zip = Join-Path $Tmp 'repo.zip'
+        Write-Host "Downloading $ArchiveUrl"
+        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+        Invoke-WebRequest -Uri $ArchiveUrl -OutFile $Zip -UseBasicParsing
+        Expand-Archive -LiteralPath $Zip -DestinationPath $Tmp
+        $Src = Join-Path $Tmp 'GeminiUltra-main\.agents'
+        if (-not (Test-Path -LiteralPath (Join-Path $Src 'skills\ultra\SKILL.md'))) {
+            throw 'Downloaded archive has no .agents\skills\ultra\SKILL.md'
         }
     }
+
+    $Items = @('skills\ultra') + @($Agents | ForEach-Object { "agents\$_" })
+    if ([IO.Path]::GetFullPath($Src).TrimEnd('\') -ieq [IO.Path]::GetFullPath($Dest).TrimEnd('\')) {
+        Write-Host "Source and target are the same ($Dest); nothing to copy."
+    } else {
+        foreach ($item in $Items) {
+            $target = Join-Path $Dest $item
+            if (Test-Path -LiteralPath $target) { Remove-Item -LiteralPath $target -Recurse -Force }
+            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
+            Copy-Item -LiteralPath (Join-Path $Src $item) -Destination $target -Recurse
+        }
+    }
+} finally {
+    if ($Tmp -and (Test-Path -LiteralPath $Tmp)) { Remove-Item -LiteralPath $Tmp -Recurse -Force }
 }
 
-Write-Host "[3/3] Validating installation..." -ForegroundColor Yellow
-$SkillFile = Join-Path $TargetDir "SKILL.md"
-if (Test-Path $SkillFile) {
-    Write-Host ""
-    Write-Host "[OK] GeminiUltra successfully installed!" -ForegroundColor Green
-    Write-Host "Installed at: $TargetDir" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "How to use:" -ForegroundColor Cyan
-    Write-Host "   1. Open Google Antigravity (IDE or CLI)." -ForegroundColor White
-    Write-Host "   2. Type in chat: /ultra <your task here>" -ForegroundColor Yellow
-    Write-Host "   3. Enjoy multi-agent high-effort reasoning!" -ForegroundColor White
-    Write-Host ""
-} else {
-    Write-Error "Failed to install GeminiUltra. Please verify network access or run manually."
+# Older releases of this repo installed "gemini-ultra", which also claims /ultra.
+$Legacy = Join-Path $Dest 'skills\gemini-ultra'
+if (Test-Path -LiteralPath $Legacy) {
+    Remove-Item -LiteralPath $Legacy -Recurse -Force
+    Write-Host "Removed old skill: $Legacy"
 }
+
+Write-Host 'Installed:'
+foreach ($file in @('skills\ultra\SKILL.md') + @($Agents | ForEach-Object { "agents\$_\agent.md" })) {
+    $path = Join-Path $Dest $file
+    if (-not (Test-Path -LiteralPath $path)) { throw "Missing after install: $path" }
+    Write-Host "  $path"
+}
+Write-Host 'Open a project in Antigravity and type: /ultra <task>'

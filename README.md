@@ -1,159 +1,101 @@
-<div align="center">
+# ultra
 
-# 🚀 GeminiUltra
+`/ultra` runs isolated worker, critic and verifier subagents on Google Antigravity.
 
-### High-Effort Multi-Agent Swarm Mode for Google Antigravity
-**Powered by Gemini 3.8 Flash (High Reasoning)**
+## Install
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Google Antigravity](https://img.shields.io/badge/Platform-Google_Antigravity-blue.svg)](https://antigravity.google)
-[![Model](https://img.shields.io/badge/Model-Gemini_3.8_Flash_(High)-8E24AA.svg)](https://deepmind.google)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/cekYc/GeminiUltra/pulls)
+From a clone of this repo:
 
-<p align="center">
-  <b>Tired of single-model blind spots?</b><br>
-  GeminiUltra orchestrates an autonomous team of specialized AI agents working together in a phased consensus, adversarial review, and self-healing loop.
-</p>
-
-</div>
-
----
-
-## ⚡ 1-Minute Quick Install
-
-Install GeminiUltra globally on your machine with a single terminal command:
-
-### 🪟 Windows (PowerShell)
-```powershell
-irm https://raw.githubusercontent.com/cekYc/GeminiUltra/main/install.ps1 | iex
+```bash
+git clone https://github.com/cekYc/GeminiUltra.git && cd GeminiUltra
+bash install.sh                        # global: ~/.gemini/config/
+bash install.sh --project ~/code/app   # one project: ~/code/app/.agents/
 ```
 
-### 🍎 macOS & 🐧 Linux (Bash)
+```powershell
+.\install.ps1                          # global: ~\.gemini\config\
+.\install.ps1 -Project C:\code\app     # one project: C:\code\app\.agents\
+```
+
+Manual copy, no script. For one project, use `<project>/.agents/` instead of
+`~/.gemini/config/`:
+
+```bash
+mkdir -p ~/.gemini/config/skills ~/.gemini/config/agents
+cp -R .agents/skills/ultra ~/.gemini/config/skills/
+cp -R .agents/agents/ultra-worker .agents/agents/ultra-critic .agents/agents/ultra-verifier ~/.gemini/config/agents/
+```
+
+```powershell
+New-Item -ItemType Directory -Force ~\.gemini\config\skills, ~\.gemini\config\agents | Out-Null
+Copy-Item -Recurse .agents\skills\ultra ~\.gemini\config\skills\
+Copy-Item -Recurse .agents\agents\ultra-* ~\.gemini\config\agents\
+```
+
+Piped one-liners download the repo and do the same copy. Read the script first:
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/cekYc/GeminiUltra/main/install.sh | bash
 ```
 
-> **Done!** The skill is now active globally across all your projects in Google Antigravity.
-
----
-
-## 💡 How to Use
-
-Once installed, open **Google Antigravity** (IDE or `agy` CLI) in any project and invoke the swarm:
-
-```text
-/ultra <your task, feature request, or refactoring problem>
-```
-
-### Examples:
-```text
-/ultra Implement an end-to-end OAuth2 PKCE login flow with unit tests
-```
-```text
-/ultra Refactor the payment webhook handler to be idempotent and handle network dropouts
-```
-
----
-
-## 🧠 Why Gemini 3.8 Flash (High)?
-
-Claude Code and OpenAI Codex introduced "Ultra" modes by chaining heavy reasoning steps. GeminiUltra optimizes this for Google's latest **Gemini 3.8 Flash (High)**:
-
-* ⚡ **Blazing Execution Speed**: Subagents debate and generate code in parallel in seconds instead of minutes.
-* 🧩 **Reasoning Tokens**: Deep thinking effort unlocks architectural foresight, catching edge cases and security vulnerabilities early.
-* 📚 **1M+ Context Window**: Feed entire codebases, database schemas, and stack traces without chunking or context loss.
-* 💎 **Ultra-Efficient**: Run 4 specialized agents simultaneously with zero quota anxiety.
-
----
-
-## 🤖 The Swarm Architecture
-
-GeminiUltra divides every task among 4 specialized subagents:
-
-```
-                            [ User Request / /ultra ]
-                                         │
-                                         ▼
-                 ┌───────────────────────────────────────────────┐
-                 │          GeminiUltra Orchestrator             │
-                 │      (Swarm Coordination & Consensus)         │
-                 └───────────────────────┬───────────────────────┘
-                                         │
-                    ┌────────────────────┴────────────────────┐
-                    ▼                                         ▼
-         ┌─────────────────────┐                   ┌─────────────────────┐
-         │   ultra_architect   │ ◄── [Adversarial]─►│   ultra_critic_qa   │
-         │ (Architecture & RFC)│      Review       │ (Edge-Case & Security│
-         │ Model: Flash (High) │                   │  Specialist)        │
-         └──────────┬──────────┘                   └─────────────────────┘
-                    │ (Consensus-Approved Specification)
-                    ▼
-         ┌─────────────────────┐
-         │     ultra_coder     │
-         │ (Precision Coding)  │
-         │ Model: Flash (High) │
-         └──────────┬──────────┘
-                    │ (Modified Codebase)
-                    ▼
-         ┌─────────────────────┐
-         │   ultra_verifier    │
-         │ (Test Suite & Lint) │ ───► [Self-Correction Loop to Coder if failed]
-         │ Model: Flash (High) │
-         └──────────┬──────────┘
-                    │ (100% Green Sign-Off)
-                    ▼
-         ┌─────────────────────┐
-         │    Ultra Briefing   │
-         │  (Final Summary)    │
-         └─────────────────────┘
-```
-
-| Agent | Role | Responsibility |
-| :--- | :--- | :--- |
-| 📐 **`ultra_architect`** | Chief Solution Architect | Maps repo dependencies, designs clean abstractions, and drafts Architecture RFCs. |
-| 🛡️ **`ultra_critic_qa`** | Adversarial Reviewer | Red-teams proposals for race conditions, security flaws, edge cases, and breaking changes. |
-| 💻 **`ultra_coder`** | Lead Implementation Engineer | Writes clean, idiomatic code and applies surgical file edits without modifying unaffected lines. |
-| 🧪 **`ultra_verifier`** | Verification & Self-Correction | Runs builds, tests, and linters in terminal. Isolates stack traces and triggers self-healing if tests fail. |
-
----
-
-## 🛠️ Alternative: Manual / Per-Project Installation
-
-If you prefer installing GeminiUltra only in a specific project rather than globally:
-
-1. Clone or copy the `.agents/skills/gemini-ultra` folder into your project's root:
-   ```bash
-   git clone https://github.com/cekYc/GeminiUltra.git
-   cp -r GeminiUltra/.agents/skills/gemini-ultra /path/to/your/project/.agents/skills/
-   ```
-2. Antigravity will automatically detect the skill within that project!
-
----
-
-## 🗑️ Uninstallation
-
-If you ever wish to remove GeminiUltra:
-
-**Windows (PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/cekYc/GeminiUltra/main/uninstall.ps1 | iex
+irm https://raw.githubusercontent.com/cekYc/GeminiUltra/main/install.ps1 | iex
 ```
 
-**macOS / Linux (Bash):**
-```bash
-curl -fsSL https://raw.githubusercontent.com/cekYc/GeminiUltra/main/uninstall.sh | bash
+The installers also delete `skills/gemini-ultra`, the previous release of this
+repo, because it claims `/ultra` too. To uninstall: `bash uninstall.sh
+[--project DIR]` or `.\uninstall.ps1 [-Project DIR]`.
+
+## Run
+
+```text
+/ultra <task>
 ```
 
----
+The main agent writes a short plan (parts with files, acceptance and a verify
+command), then calls `invoke_subagent` for:
 
-## 🤝 Contributing
+1. `ultra-worker`, one per part, in parallel when their files don't overlap
+2. `ultra-critic`, a read-only review: races, auth, missing tests, unsafe crypto
+3. `ultra-verifier`, which only runs the verify commands and reports exit
+   codes and output
 
-Contributions, feedback, and pull requests are warmly welcomed!
-- Feel free to report issues or suggest agent enhancements in [GitHub Issues](https://github.com/cekYc/GeminiUltra/issues).
-- Want to add new agent archetypes or fine-tune prompts? Open a Pull Request!
+A failed verify goes back to a worker with the log, up to 3 verifier runs. The
+run ends with an Ultra Brief: subagent IDs, files changed, verify command and
+exit code, critic findings.
 
----
+To check that subagents really ran, open `/agents` (CLI) or the Subagents pane
+(Antigravity app) during the run. If you only see one chat, the skill failed.
 
-## 📄 License
+## When not to use
 
-Distributed under the [MIT License](LICENSE). Built for the AI developer community.
+- Typos, one-line changes, "explain this code", questions. `/ultra` refuses
+  these; use a normal prompt with high effort.
+- Changes nothing can check. Without a test, build, typecheck or lint command
+  the verifier has nothing to run.
+- When quota or time matters more than a second look: a run costs at least
+  three subagents plus the main agent.
+
+## Honest limits
+
+- Same model family. Subagents inherit your current model. This is
+  orchestration, not a new or bigger model.
+- Isolation comes from `invoke_subagent`: each subagent starts with no parent
+  chat history, only the prompt it is given. The critic shares the worker's
+  model, so it catches different mistakes, not all of them.
+- The agent files use the format Antigravity's own `define_subagent` writes
+  (`agents/<name>/agent.md`). Antigravity's public docs don't list an agents
+  folder. If a subagent type isn't found, the skill defines it from these
+  files with `define_subagent`. In that case the verifier also gets edit tools
+  and is only told not to use them.
+
+## Files
+
+```
+.agents/skills/ultra/SKILL.md             orchestrator instructions
+.agents/agents/ultra-worker/agent.md      implements one plan part
+.agents/agents/ultra-critic/agent.md      read-only review
+.agents/agents/ultra-verifier/agent.md    runs the verify commands, nothing else
+```
+
+MIT licensed.

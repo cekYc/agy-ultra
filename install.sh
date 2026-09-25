@@ -1,53 +1,59 @@
 #!/usr/bin/env bash
+# Installs the /ultra skill and its three subagents for Google Antigravity.
 #
-# GeminiUltra 1-Click Installer for macOS / Linux (Google Antigravity)
-# Powered by Gemini 3.8 Flash (High Reasoning)
+#   bash install.sh                  global:  ~/.gemini/config/skills/ultra + ~/.gemini/config/agents/ultra-*
+#   bash install.sh --project DIR    project: DIR/.agents/skills/ultra      + DIR/.agents/agents/ultra-*
 #
+# Run it from a clone of this repo. When piped from curl it downloads the repo first.
 set -euo pipefail
 
-REPO_URL="https://github.com/cekYc/GeminiUltra.git"
-GLOBAL_SKILLS_DIR="$HOME/.gemini/config/skills"
-TARGET_DIR="$GLOBAL_SKILLS_DIR/gemini-ultra"
+ARCHIVE_URL="https://codeload.github.com/cekYc/GeminiUltra/tar.gz/refs/heads/main"
+AGENTS=(ultra-worker ultra-critic ultra-verifier)
+USAGE="usage: install.sh [--global | --project DIR]"
 
-echo ""
-echo -e "\033[1;36m===========================================================\033[0m"
-echo -e "\033[1;36m   🚀 Installing GeminiUltra for Google Antigravity        \033[0m"
-echo -e "\033[0;36m   Powered by Gemini 3.8 Flash (High Reasoning)            \033[0m"
-echo -e "\033[1;36m===========================================================\033[0m"
-echo ""
+case "${1:-}" in
+  ""|--global) DEST="$HOME/.gemini/config" ;;
+  --project)
+    [ -n "${2:-}" ] || { echo "$USAGE" >&2; exit 2; }
+    [ -d "$2" ] || { echo "error: not a directory: $2" >&2; exit 2; }
+    DEST="$(cd "$2" && pwd -P)/.agents" ;;
+  -h|--help) echo "$USAGE"; exit 0 ;;
+  *) echo "$USAGE" >&2; exit 2 ;;
+esac
 
-# Ensure target directory exists
-echo -e "\033[1;33m[1/3] Preparing global skills directory...\033[0m"
-mkdir -p "$GLOBAL_SKILLS_DIR"
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd || echo "")"
-LOCAL_SOURCE="$SCRIPT_DIR/.agents/skills/gemini-ultra"
-
-if [ -n "$SCRIPT_DIR" ] && [ -d "$LOCAL_SOURCE" ]; then
-    echo -e "\033[1;33m[2/3] Installing from local repository...\033[0m"
-    rm -rf "$TARGET_DIR"
-    cp -r "$LOCAL_SOURCE" "$TARGET_DIR"
-else
-    echo -e "\033[1;33m[2/3] Downloading latest GeminiUltra release from GitHub...\033[0m"
-    TMP_DIR=$(mktemp -d)
-    trap 'rm -rf "$TMP_DIR"' EXIT
-    git clone --depth 1 "$REPO_URL" "$TMP_DIR" --quiet
-    rm -rf "$TARGET_DIR"
-    cp -r "$TMP_DIR/.agents/skills/gemini-ultra" "$TARGET_DIR"
+SRC=""
+if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+  SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/.agents"
+fi
+if [ -z "$SRC" ] || [ ! -f "$SRC/skills/ultra/SKILL.md" ]; then
+  TMP="$(mktemp -d)"
+  trap 'rm -rf "$TMP"' EXIT
+  echo "Downloading $ARCHIVE_URL"
+  curl -fsSL "$ARCHIVE_URL" | tar -xz -C "$TMP" --strip-components=1
+  SRC="$TMP/.agents"
+  [ -f "$SRC/skills/ultra/SKILL.md" ] || { echo "error: download has no .agents/skills/ultra/SKILL.md" >&2; exit 1; }
 fi
 
-echo -e "\033[1;33m[3/3] Validating installation...\033[0m"
-if [ -f "$TARGET_DIR/SKILL.md" ]; then
-    echo ""
-    echo -e "\033[1;32m✅ GeminiUltra successfully installed!\033[0m"
-    echo -e "\033[0;37m📁 Installed at: $TARGET_DIR\033[0m"
-    echo ""
-    echo -e "\033[1;36m💡 How to use:\033[0m"
-    echo -e "   1. Open Google Antigravity (IDE or CLI)."
-    echo -e "   2. Type in chat: \033[1;33m/ultra <your task here>\033[0m"
-    echo -e "   3. Enjoy multi-agent high-effort reasoning!"
-    echo ""
+if [ "$SRC" = "$DEST" ]; then
+  echo "Source and target are the same ($DEST); nothing to copy."
 else
-    echo -e "\033[1;31m❌ Installation failed. Please check network connectivity.\033[0m" >&2
-    exit 1
+  mkdir -p "$DEST/skills" "$DEST/agents"
+  rm -rf "$DEST/skills/ultra"
+  cp -R "$SRC/skills/ultra" "$DEST/skills/ultra"
+  for a in "${AGENTS[@]}"; do
+    rm -rf "$DEST/agents/$a"
+    cp -R "$SRC/agents/$a" "$DEST/agents/$a"
+  done
 fi
+
+# Older releases of this repo installed "gemini-ultra", which also claims /ultra.
+if [ -d "$DEST/skills/gemini-ultra" ]; then
+  rm -rf "$DEST/skills/gemini-ultra"
+  echo "Removed old skill: $DEST/skills/gemini-ultra"
+fi
+
+check() { [ -f "$DEST/$1" ] || { echo "error: missing $DEST/$1" >&2; exit 1; }; echo "  $DEST/$1"; }
+echo "Installed:"
+check skills/ultra/SKILL.md
+for a in "${AGENTS[@]}"; do check "agents/$a/agent.md"; done
+echo "Open a project in Antigravity and type: /ultra <task>"
